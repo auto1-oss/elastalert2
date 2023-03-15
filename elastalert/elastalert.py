@@ -698,7 +698,8 @@ class ElastAlerter(object):
                 # Query from the end of the last run, if it exists, otherwise a run_every sized window
                 rule['starttime'] = rule.get('previous_endtime', endtime - self.run_every)
             else:
-                rule['starttime'] = rule.get('previous_endtime', endtime - rule['timeframe'])
+                #Based on PR 3141 old Yelp/elastalert - rschirin
+                rule['starttime'] = endtime - rule['timeframe']
 
     def adjust_start_time_for_overlapping_agg_query(self, rule):
         if rule.get('aggregation_query_element'):
@@ -880,7 +881,7 @@ class ElastAlerter(object):
             # If realert is set, silence the rule for that duration
             # Silence is cached by query_key, if it exists
             # Default realert time is 0 seconds
-            silence_cache_key = rule['name']
+            silence_cache_key = rule['realert_key']
             query_key_value = self.get_query_key_value(rule, match)
             if query_key_value is not None:
                 silence_cache_key += '.' + query_key_value
@@ -1675,7 +1676,7 @@ class ElastAlerter(object):
         # With --rule, self.rules will only contain that specific rule
         if not silence_cache_key:
             if self.args.silence_qk_value:
-                silence_cache_key = self.rules[0]['name'] + "." + self.args.silence_qk_value
+                silence_cache_key = self.rules[0]['realert_key'] + "." + self.args.silence_qk_value
             else:
                 silence_cache_key = self.rules[0]['name'] + "._silence"
 
